@@ -8,42 +8,31 @@
 		#photo{
 			width:100px;
 			height:100px;
-			background-color: tomato;
+			background-color: #d0d0d0;
 		}
 		#photo:after{
 		    content: '拖拽一个图片到这里';
-		    top: 150px;
+		    left: 200px;
 		    z-index: 1;
 		    color: #ccc;
 		    display: block;
-		    font-size: 20px;
 		    position: absolute;
 		    width: 100%;
 		    letter-spacing: 1px;
+		    font-size: 12px;
 		}
 	</style>
 </head>
 <body>
 	<div id="photo"></div>
 	<img></img>
-	<input type="file" id="file_demo"/> 
+	<div id="filterContainer"></div>
 	<script type="text/javascript">
-		// var input = document.getElementById("file_demo");
-		// var result = document.getElementById("photo");
-	 //    input.addEventListener( 'change',readFile,false );
-	 //    function readFile(){
-  //   		var file = this.files[0];
-	 //        if(!/image\/\w+/.test(file.type)){
-	 //                alert("请确保文件为图像类型");
-	 //                return false;
-	 //        }
-	 //        var reader = new FileReader();
-	 //        reader.readAsDataURL(file);
-	 //        reader.onload = function(e){
-	 //                result.innerHTML = '<img src="'+this.result+'" alt=""/>'
-	 //                //document.getElementById("photo").append(result);
-	 //        }
-		// }
+		var	maxWidth = 500,
+			maxHeight = 500,
+			originalCanvas = null,
+			filterContainer = $('#filterContainer');
+
 		var opts = {
 		    dragClass: "drag",
 		    accept: false,
@@ -69,11 +58,65 @@
 				    //向拖拽容器添加一个图片元素
 				    var img = $('<img>').appendTo(photo);
 				    //图片读取成功后触发，这样才能找到图片原始宽度和高度
-				    img.load(function(){
-				    });
-				    // 设置图片的src，直接读取二进制图片数据
-				    // 触发img的load事件
-				    img.attr('src', e.target.result);
+					    img.load(function(){
+					    	
+						imgWidth  = this.width;
+						imgHeight = this.height;
+
+						// 控制在500*500px
+						if (imgWidth >= maxWidth || imgHeight >= maxHeight) {
+							if (imgWidth > imgHeight) {
+	                            //ratio是希望处理图片时，依旧可以保证比例的正确
+								ratio = imgWidth / maxWidth;
+								newWidth = maxWidth;
+								newHeight = imgHeight / ratio;
+
+							} else {
+								ratio = imgHeight / maxHeight;
+								newHeight = maxHeight;
+								newWidth = imgWidth / ratio;
+							}
+
+						} else {
+							newHeight = imgHeight;
+							newWidth = imgWidth;
+						}
+
+						// 创建一个Canvas
+						originalCanvas = $('<canvas>');
+						var originalContext = originalCanvas[0].getContext('2d');
+						
+
+						// 设置canvas元素的宽度、高度、外边距
+						originalCanvas.attr({
+							width: newWidth,
+							height: newHeight
+						})
+
+						// 将图片绘制到canvas元素中
+						originalContext.drawImage(this, 0, 0, newWidth, newHeight);
+						originalCanvas.appendTo(filterContainer);
+						// 移除图片元素（已经不需要了，接下来使用canvas处理就好）
+						img.remove();
+
+						var original = document.getElementsByTagName('canvas')[0];
+						var originalContext = original.getContext('2d');
+						var pixels = originalContext.getImageData(0,0,newWidth,newHeight);
+						for (var i=0 , len=pixels.data.length ; i<len ; i+=4) {
+							pixels.data[i] = 255-pixels.data[i];
+							pixels.data[i+1] = 255-pixels.data[i+1];
+							pixels.data[i+2] = 255-pixels.data[i+2];
+						}
+						// 将图片绘制到canvas元素中
+						originalContext.putImageData(pixels,0,0);				
+						
+					});
+
+				// 设置图片的src，直接读取二进制图片数据
+				// 触发img的load事件
+
+				img.attr('src', e.target.result);
+
 		    	},
 		        error: function(e, file) {
 		        	// Native ProgressEvent
@@ -103,27 +146,5 @@
 
 		$("#photo").fileReaderJS(opts);
 		$("body").fileClipboard(opts);
-		// var photo = $('#photo');
-		// //调用FileReader插件
-		// photo.fileReaderJS({
-		//     //监听拖拽的各个事件
-		//     on:{		 
-		//         beforestart: function(e, file) {
-		//             //只接受图片
-		//             return /^image\/\w+/.test(file.type);
-		//         },
-		//         load: function(e, file) {
-		// 		    //向拖拽容器添加一个图片元素
-		// 		    var img = $('<img>').appendTo(photo);
-		// 		    //图片读取成功后触发，这样才能找到图片原始宽度和高度
-		// 		    img.load(function(){
-		// 		        alert(1)
-		// 		    });
-		// 		    // 设置图片的src，直接读取二进制图片数据
-		// 		    // 触发img的load事件
-		// 		    img.attr('src', e.target.result);
-		// 		}
-		//     }
-		// })
 	</script>
 </body>
