@@ -97,16 +97,25 @@
 						originalContext.drawImage(this, 0, 0, newWidth, newHeight);
 						originalCanvas.appendTo(filterContainer);
 						// 移除图片元素（已经不需要了，接下来使用canvas处理就好）
-						img.remove();
+						//img.remove();
 
 						var original = document.getElementsByTagName('canvas')[0];
 						var originalContext = original.getContext('2d');
 						var pixels = originalContext.getImageData(0,0,newWidth,newHeight);
+						var centerX = 20;
+						var centerY = 20;
 						for (var i=0 , len=pixels.data.length ; i<len ; i+=4) {
-							pixels.data[i] = 255-pixels.data[i];
-							pixels.data[i+1] = 255-pixels.data[i+1];
-							pixels.data[i+2] = 255-pixels.data[i+2];
+							var j = i/4;
+							var x = j%150;
+							var y = Math.floor(j/150);
+							if( Math.pow((centerX - x),2) + Math.pow((centerY - y),2) > 400 )
+							{	
+								pixels.data[i] = 255;
+								pixels.data[i+1] = 255;
+								pixels.data[i+2] = 255;
+							}
 						}
+						console.log(pixels.data);
 						// 将图片绘制到canvas元素中
 						originalContext.putImageData(pixels,0,0);				
 						
